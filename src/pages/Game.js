@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { apiTrivia } from '../service/apiTrivia';
 import Header from '../components/Header';
-import { saveScoreAction } from '../redux/actions';
+import { saveScoreAction, feedbackScoreAction } from '../redux/actions';
+import '../style/Game.css';
 
 class Game extends React.Component {
   constructor() {
@@ -32,7 +33,7 @@ class Game extends React.Component {
       clearInterval(this.timerInterval);
       this.setState({
         isDisable: true,
-        timer: 0,
+        timer: 30,
         clickAnswer: true,
       });
     }
@@ -77,6 +78,7 @@ class Game extends React.Component {
   answerChosen = () => {
     this.setState({
       clickAnswer: true,
+      isDisable: true,
     });
     clearInterval(this.timerInterval);
   }
@@ -84,28 +86,28 @@ class Game extends React.Component {
   altClassNames = (element) => {
     const { resultsTriviaApi, indexQuestion } = this.state;
     if (element === resultsTriviaApi[indexQuestion].correct_answer) {
-      return 'correct-answer';
+      return 'correct-answer buttons-answer';
     }
-    return 'incorrect-answer';
+    return 'incorrect-answer buttons-answer';
   }
 
   verifyCorrectAnswer = (element) => {
-    const { newScore } = this.props;
+    const { newScore, feedbackAssertions } = this.props;
     const { resultsTriviaApi, indexQuestion, timer } = this.state;
-    const hardScore = 3;
-    let difficultyScore = resultsTriviaApi[indexQuestion].difficulty;
-    if (difficultyScore === 'hard') {
-      difficultyScore = hardScore;
-    } else if (difficultyScore === 'medium') {
-      difficultyScore = 2;
-    } else if (difficultyScore === 'easy') {
-      difficultyScore = 1;
-    }
+    const difficultyScore = resultsTriviaApi[indexQuestion].difficulty;
 
     if (resultsTriviaApi[indexQuestion].correct_answer === element) {
-      newScore(timer, difficultyScore);
+      newScore(timer, this.verifyDifficulty(difficultyScore));
+      feedbackAssertions();
     }
   };
+
+  verifyDifficulty = (difficultyScore) => {
+    const hardScore = 3;
+    if (difficultyScore === 'hard') return hardScore;
+    if (difficultyScore === 'medium') return 2;
+    return 1;
+  }
 
   nextQuestion = () => {
     const { history } = this.props;
@@ -115,15 +117,15 @@ class Game extends React.Component {
         timer: 30,
         indexQuestion: prev.indexQuestion + 1,
         clickAnswer: false,
-
-      }), () => this.teste());
+        isDisable: false,
+      }), () => this.newQuestionArray());
       this.setQuestionTimer();
     } else {
       history.push('/feedback');
     }
   }
 
- teste = () => {
+ newQuestionArray = () => {
    const numberRandom = 0.5;
    const { indexQuestion, resultsTriviaApi } = this.state;
    this.setState({
@@ -143,23 +145,23 @@ class Game extends React.Component {
      isDisable } = this.state;
 
    return (
-     <div>
+     <div className="container-game">
        <Header />
-       <main>
-         <h3>
+       <main className="container-main">
+         <h3 className="timer">
            {timer}
          </h3>
          { resultsTriviaApi.length > 0
         && (
           <section>
-            <h1 data-testid="question-category">
+            <h1 data-testid="question-category" className="category">
               {
                 `Category: ${resultsTriviaApi[indexQuestion].category}`
               }
             </h1>
-            <h2 data-testid="question-text">
+            <p data-testid="question-text" className="question">
               { resultsTriviaApi[indexQuestion].question }
-            </h2>
+            </p>
             <div data-testid="answer-options">
               { newArray.map((element, index) => (
                 <button
@@ -172,7 +174,7 @@ class Game extends React.Component {
                   } }
                   disabled={ isDisable }
                   className={
-                    clickAnswer ? this.altClassNames(element) : ''
+                    clickAnswer ? this.altClassNames(element) : 'buttons-answer'
                   }
                 >
                   {element}
@@ -186,13 +188,12 @@ class Game extends React.Component {
                 type="button"
                 data-testid="btn-next"
                 onClick={ this.nextQuestion }
+                className="btn-next"
               >
                 Next
-
               </button>
             )
             }
-
           </section>
         )}
        </main>
@@ -203,6 +204,7 @@ class Game extends React.Component {
 
 const mapDispatchToProps = (dispatch) => ({
   newScore: (timer, difficulty) => dispatch(saveScoreAction(timer, difficulty)),
+  feedbackAssertions: () => dispatch(feedbackScoreAction()),
 });
 
 Game.propTypes = {
@@ -210,6 +212,7 @@ Game.propTypes = {
     push: PropTypes.func,
   }).isRequired,
   newScore: PropTypes.func.isRequired,
+  feedbackAssertions: PropTypes.func.isRequired,
 };
 
 export default connect(null, mapDispatchToProps)(Game);

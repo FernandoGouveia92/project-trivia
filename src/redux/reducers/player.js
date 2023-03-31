@@ -8,7 +8,10 @@ const INITIAL_STATE = {
 };
 
 const player = (state = INITIAL_STATE, action) => {
-  const { SAVE_NAME, REQUIRE_GRAVATAR_SUCCESS, SAVE_SCORE } = types;
+  const { SAVE_NAME,
+    REQUIRE_GRAVATAR_SUCCESS, SAVE_SCORE,
+    FEEDBACK_SCORE, RESET_SCORE } = types;
+
   switch (action.type) {
   case SAVE_NAME:
     return {
@@ -24,6 +27,17 @@ const player = (state = INITIAL_STATE, action) => {
     return {
       ...state,
       score: state.score + action.score,
+    };
+  case FEEDBACK_SCORE:
+    return {
+      ...state,
+      assertions: state.assertions + 1,
+    };
+  case RESET_SCORE:
+    return {
+      ...state,
+      score: 0,
+      assertions: 0,
     };
   default:
     return state;
